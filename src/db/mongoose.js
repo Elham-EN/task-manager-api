@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const createUserSchema = require("./models/User");
 const createTaskSchema = require("./models/Task");
 
@@ -12,19 +13,6 @@ const createUserObject = async (userModel, requestData) => {
   });
   try {
     return await saveInstanceToDatabase(user);
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-//Creating Instance of Task
-const createTaskObject = async (taskModel, requestData) => {
-  const task = new taskModel({
-    description: requestData.description,
-    completed: requestData.completed,
-  });
-  try {
-    return await saveInstanceToDatabase(task);
   } catch (error) {
     throw new Error(error.message);
   }
@@ -47,6 +35,14 @@ async function dbFunction(requestData) {
     await mongoose.connect("mongodb://127.0.0.1:27017/task-manager-api");
     //Models are defined through the Schema interface.
     const UserSchema = createUserSchema(mongoose);
+    //Pre middleware function is executed before saving the user document
+    // UserSchema.pre("save", async function (next) {
+    //   //this - reference to the individual user that is about to be save
+    //   const user = this;
+    //   if (user.isModified("password"))
+    //     user.password = await bcrypt.hash(user.password, 8);
+    //   next(); //call next when we are done
+    // });
     //Accessing a Model (Creating a model)
     const User =
       //Check if model User exists then use it, else create it

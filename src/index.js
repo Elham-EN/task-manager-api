@@ -27,3 +27,18 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+// const myFunction = async () => {
+//   const passwordPlainText = "soranXD555";
+//   //Hashing algorthim by the design are not reversible (there is
+//   //no way to get the plain text version once we hashed it)
+//   const hashedPassword = await bcrypt.hash(passwordPlainText, 8);
+//   console.log("====================================");
+//   console.log(hashedPassword);
+//   console.log("====================================");
+//   const isMatch = await bcrypt.compare("soranXD555", hashedPassword);
+//   console.log("====================================");
+//   console.log(isMatch);
+//   console.log("====================================");
+// };
+// myFunction();

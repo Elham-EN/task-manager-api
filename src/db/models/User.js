@@ -39,7 +39,6 @@ const createUserSchema = (mongoose) => {
       type: String,
       required: true,
       minLength: 6,
-      maxLength: 12,
       trim: true,
       validate: function (value) {
         if (value.toLowerCase() === "password")

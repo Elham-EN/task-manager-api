@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const dbFunction = require("../db/mongoose");
 
 const router = new express.Router();
@@ -15,6 +16,7 @@ const ReqInfo = {
 //on route "" (send back a response to that client)
 router.post("/", async (req, res) => {
   req.body.requestInfo = ReqInfo.CREATE_USER;
+  req.body.password = await bcrypt.hash(req.body.password, 8);
   try {
     const result = await dbFunction(req.body);
     res
@@ -81,6 +83,10 @@ router.get("/:id", async (req, res) => {
 });
 
 router.patch("/:id", async function (req, res) {
+  const passwordExist = req.body.password ? true : false;
+  if (passwordExist) {
+    req.body.password = await bcrypt.hash(req.body.password, 8);
+  }
   //returns an array of object's property names
   const updatesProps = Object.keys(req.body);
   const allowPropsUpdate = ["name", "email", "password", "age"];
