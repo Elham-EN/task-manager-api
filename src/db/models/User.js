@@ -27,6 +27,7 @@ const createUserSchema = (mongoose) => {
     email: {
       type: String,
       required: true,
+      unique: true, //Prevent new user using an existing email
       trim: true,
       lowercase: true,
       validate: function (value) {

@@ -18,6 +18,19 @@ const createUserObject = async (userModel, requestData) => {
   }
 };
 
+//Creating Instance of Task
+const createTaskObject = async (taskModel, requestData) => {
+  const task = new taskModel({
+    description: requestData.description,
+    completed: requestData.completed,
+  });
+  try {
+    return await saveInstanceToDatabase(task);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 //Save user/task instance to the database
 const saveInstanceToDatabase = async (instance) => {
   try {
@@ -28,6 +41,23 @@ const saveInstanceToDatabase = async (instance) => {
   }
 };
 
+//Fetch user document by valid credentials
+//(Authentication - Who you say you are?)
+async function findByCredentials(User, requestBody) {
+  const email = requestBody.email;
+  const password = requestBody.password;
+  //Find user with that email
+  const user = await User.findOne({ email });
+  //If there was no user with that email
+  if (!user) throw new Error("Unable to login (Invalid Email)");
+  //Find user with that password by matching
+  const isMatch = await bcrypt.compare(password, user.password);
+  //If password does not match the password from the database
+  if (!isMatch) throw new Error("Unable to login (Invalid Password)");
+  //User is found with valid credentials
+  return user;
+}
+
 async function dbFunction(requestData) {
   try {
     //Connect mongoose to mongoDB Database server (running on machine)
@@ -35,14 +65,6 @@ async function dbFunction(requestData) {
     await mongoose.connect("mongodb://127.0.0.1:27017/task-manager-api");
     //Models are defined through the Schema interface.
     const UserSchema = createUserSchema(mongoose);
-    //Pre middleware function is executed before saving the user document
-    // UserSchema.pre("save", async function (next) {
-    //   //this - reference to the individual user that is about to be save
-    //   const user = this;
-    //   if (user.isModified("password"))
-    //     user.password = await bcrypt.hash(user.password, 8);
-    //   next(); //call next when we are done
-    // });
     //Accessing a Model (Creating a model)
     const User =
       //Check if model User exists then use it, else create it
@@ -52,8 +74,7 @@ async function dbFunction(requestData) {
       return await createUserObject(User, requestData);
     }
     if (requestData === "GET_ALL_USERS") {
-      const query = {};
-      return await User.find(query);
+      return await User.find({});
     }
     if (requestData.requestInfo === "GET_USER") {
       //Mongoose automatically convert string _id to object ObjectId
@@ -71,6 +92,9 @@ async function dbFunction(requestData) {
     }
     if (requestData.requestInfo === "DELETE_USER") {
       return await User.findByIdAndDelete(requestData._id);
+    }
+    if (requestData.requestInfo === "LOGIN_USER") {
+      return await findByCredentials(User, requestData.requestBody);
     }
     const TaskSchema = createTaskSchema(mongoose);
     const Task =

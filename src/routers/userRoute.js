@@ -10,12 +10,15 @@ const ReqInfo = {
   GET_ALL_USERS: "GET_ALL_USERS",
   UPDATE_USER: "UPDATE_USER",
   DELETE_USER: "DELETE_USER",
+  LOGIN_USER: "LOGIN_USER",
 };
 
 //Fire the hanlder function when client make a POST request
-//on route "" (send back a response to that client)
+//on route "" (send back a response to that client).
+//Sign Up (Create User) (Needs to be public)
 router.post("/", async (req, res) => {
   req.body.requestInfo = ReqInfo.CREATE_USER;
+  //Hash the plain text password using hash algorthim
   req.body.password = await bcrypt.hash(req.body.password, 8);
   try {
     const result = await dbFunction(req.body);
@@ -28,6 +31,22 @@ router.post("/", async (req, res) => {
       .setHeader("Content-Type", "text/html")
       .status(400) //(Bad request made by client)
       .send(error.message);
+  }
+});
+
+//Provide Login Credentials (Authentication - Who you say you are?)
+//(route must be public so user can log in). You must be authenticated
+//to perform the rest of the CRUD operation only user not someone else
+router.post("/login", async function (req, res) {
+  const requestObj = {
+    requestBody: req.body,
+    requestInfo: ReqInfo.LOGIN_USER,
+  };
+  try {
+    const result = await dbFunction(requestObj);
+    res.status(200).send({ msg: "Logged In Successfully", result });
+  } catch (error) {
+    res.status(404).send(error.message);
   }
 });
 

@@ -28,17 +28,12 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// const myFunction = async () => {
-//   const passwordPlainText = "soranXD555";
-//   //Hashing algorthim by the design are not reversible (there is
-//   //no way to get the plain text version once we hashed it)
-//   const hashedPassword = await bcrypt.hash(passwordPlainText, 8);
-//   console.log("====================================");
-//   console.log(hashedPassword);
-//   console.log("====================================");
-//   const isMatch = await bcrypt.compare("soranXD555", hashedPassword);
-//   console.log("====================================");
-//   console.log(isMatch);
-//   console.log("====================================");
-// };
-// myFunction();
+const jwt = require("jsonwebtoken");
+
+const myFunction = async () => {
+  //To create new json web token and the return value from
+  //sign is your new authentication token. First arg is an
+  //object and contain the data that is going to be embedded
+  //in your token
+  const token = jwt.sign({ _id: "abc123" }, "");
+};
