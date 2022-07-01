@@ -1,5 +1,6 @@
 const express = require("express");
 const dbFunction = require("../db/mongoose");
+const auth = require("../middlewares/auth");
 
 //Create Router for task
 const router = new express.Router();
@@ -12,14 +13,20 @@ const ReqInfo = {
   DELETE_TASK: "DELETE_TASK",
 };
 
-router.post("/", async (req, res) => {
-  req.body.requestInfo = ReqInfo.CREATE_TASK;
+//To make sure that when a task is created, it's associated
+//with the person who is authticated
+router.post("/", auth, async (req, res) => {
+  const reqObject = {
+    requestBody: req.body,
+    requestInfo: ReqInfo.CREATE_TASK,
+    userId: req.user._id,
+  };
   try {
-    const result = await dbFunction(req.body);
+    const result = await dbFunction(reqObject);
     res
       .setHeader("Content-Type", "application/json")
       .status(201)
-      .send({ result: result });
+      .send({ msg: "Task added", result: result });
   } catch (error) {
     res
       .setHeader("Content-Type", "text/html")
@@ -28,10 +35,27 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+//use query parameters/string to allow for data filtering
+//GET all completed. URL -localhost:3000/tasks?completed=true
+//Pagination is configured using limit and skip to get data.
+//If a client wanted the first page of 10 tasks, limit would
+//be set to 10 and skip would be set to 0 . If the client
+//wanted the third page of 10 tasks, limit would be set to 10
+//and skip would be set to 20.
+//GET /tasks?completed=true&limit=10&skip=0
+router.get("/", auth, async (req, res) => {
   try {
+    const { completed, limit, skip, sortBy } = req.query;
     //Return an array of document objects when called find()
-    const results = await dbFunction(ReqInfo.GET_ALL_TASKS);
+    const requestObj = {
+      requestInfo: ReqInfo.GET_ALL_TASKS,
+      owner_id: req.user._id,
+      completed,
+      limit,
+      skip,
+      sortBy,
+    };
+    const results = await dbFunction(requestObj);
     if (results.length === 0) {
       return res
         .setHeader("Content-Type", "text/html")
@@ -50,9 +74,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+//route parameter to capture dynamic value on the url '/:id'
+router.get("/:id", auth, async (req, res) => {
   const requestObj = {
     _id: req.params.id,
+    owner_id: req.user._id,
     requestInfo: ReqInfo.GET_TASK,
   };
   try {
@@ -75,7 +101,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async function (req, res) {
+router.patch("/:id", auth, async function (req, res) {
   //returns an array of object's property names
   const updatesProps = Object.keys(req.body);
   const allowPropsUpdate = ["description", "completed"];
@@ -89,6 +115,7 @@ router.patch("/:id", async function (req, res) {
   }
   const reqObj = {
     _id: req.params.id,
+    owner_id: req.user._id,
     requestInfo: ReqInfo.UPDATE_TASK,
     body: req.body,
   };
@@ -104,9 +131,10 @@ router.patch("/:id", async function (req, res) {
   }
 });
 
-router.delete("/:id", async function (req, res) {
+router.delete("/:id", auth, async function (req, res) {
   const reqObj = {
     _id: req.params.id,
+    owner_id: req.user._id,
     requestInfo: ReqInfo.DELETE_TASK,
   };
   try {
@@ -114,7 +142,7 @@ router.delete("/:id", async function (req, res) {
     if (!result) {
       return res.status(404).send("Task not found");
     }
-    res.status(200).send(result);
+    res.status(200).send({ msg: "Task successfully deleted", result });
   } catch (error) {
     res.status(500).send("Internal Server Error");
   }
