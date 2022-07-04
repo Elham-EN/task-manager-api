@@ -106,25 +106,23 @@ async function dbFunction(requestData) {
     //Connect mongoose to mongoDB Database server (running on machine)
     //And create the database "task-manager-api"
     await mongoose.connect(process.env.MONGODB_DRIVER_URL);
-
+    //mongoose = await connectToMongoDBServer();
     //Models are defined through the Schema interface.
     const UserSchema = createUserSchema(mongoose);
+    //Accessing a Model (Creating a model)
+    //Check if model User exists then use it, else create it
+    const User =
+      mongoose.models.User || mongoose.model("User", UserSchema);
 
+    const TaskSchema = createTaskSchema(mongoose);
+    const Task =
+      mongoose.models.Task || mongoose.model("Task", TaskSchema);
     //It’s a reference to the task data stored in the separate collection.
     UserSchema.virtual("task", {
       ref: "Task",
       localField: "_id",
       foreignField: "owner_id",
     });
-
-    //Accessing a Model (Creating a model)
-    const User =
-      //Check if model User exists then use it, else create it
-      mongoose.models.User || mongoose.model("User", UserSchema);
-
-    const TaskSchema = createTaskSchema(mongoose);
-    const Task =
-      mongoose.models.Task || mongoose.model("Task", TaskSchema);
 
     if (requestData.requestInfo === "CREATE_USER") {
       //Create User Object and save to the database
@@ -180,6 +178,11 @@ async function dbFunction(requestData) {
     if (requestData.requestInfo === "DELETE_UPLOAD_PROFILE") {
       return await requestData.user.save();
     }
+
+    if (requestData === "GET_USER_COLLECTION") {
+      return User;
+    }
+
     if (requestData.requestInfo === "CREATE_TASK") {
       const { requestBody, userId } = requestData;
       return await createTaskObject(Task, requestBody, userId);
@@ -214,8 +217,8 @@ async function dbFunction(requestData) {
   } catch (error) {
     throw new Error(error.message);
   } finally {
-    await mongoose.connection.close();
+    await mongoose.disconnect;
   }
 }
 
-module.exports = dbFunction;
+module.exports = { dbFunction, mongoose, createUserObject };

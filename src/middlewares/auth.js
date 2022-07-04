@@ -32,7 +32,7 @@
  */
 
 const jwt = require("jsonwebtoken");
-const dbFunction = require("../db/mongoose");
+const { dbFunction } = require("../db/mongoose");
 
 const authFunction = async (req, res, next) => {
   try {

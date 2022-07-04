@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const multer = require("multer");
-const dbFunction = require("../db/mongoose");
+const { dbFunction } = require("../db/mongoose");
 const auth = require("../middlewares/auth");
 const {
   sendWelcomeEmail,
@@ -32,13 +32,13 @@ const ReqInfo = {
 //Fire the hanlder function when client make a POST request on route
 //"/user" (send back a response to that client).
 //Sign Up (Create User) (Needs to be public) (API send back auth token)
-router.post("/", async (req, res) => {
+router.post("/users", async (req, res) => {
   req.body.requestInfo = ReqInfo.CREATE_USER;
   //Hash the plain text password using hash algorthim
   req.body.password = await bcrypt.hash(req.body.password, 8);
   try {
     const result = await dbFunction(req.body);
-    await sendWelcomeEmail(result.user.email, result.user.name);
+    //await //sendWelcomeEmail(result.user.email, result.user.name);
     res
       .setHeader("Content-Type", "application/json")
       .status(201) //Object added to the database
@@ -58,7 +58,7 @@ router.post("/", async (req, res) => {
 //Provide Login Credentials (Authentication - Who you say you are?)
 //(route must be public so user can log in). You must be authenticated
 //to perform the rest of the CRUD operation only user not someone else
-router.post("/login", async function (req, res) {
+router.post("/users/login", async function (req, res) {
   const requestObj = {
     requestBody: req.body,
     requestInfo: ReqInfo.LOGIN_USER,
@@ -70,16 +70,17 @@ router.post("/login", async function (req, res) {
     requestObj.requestInfo = ReqInfo.USER_PROFILE;
     //Do not expose sensitive data to the client (tokens & password)
     const userProfile = await dbFunction(requestObj);
+
     //At this point we are provinding the authentication token
     //to the client and the client can take this and make another
     //request that require authentication
-    res.status(200).send({
+    return res.status(200).send({
       msg: "Logged In Successfully",
       user: userProfile,
       token: result.token,
     });
   } catch (error) {
-    res.status(404).send(error.message);
+    return res.status(401).send(error.message);
   }
 });
 
@@ -90,7 +91,7 @@ router.post("/login", async function (req, res) {
 //of these devices, and need to make sure i'm not logged out of all other
 //devices.) We need to target a specific token that was used when they
 //authenticated in auth middleware function.
-router.post("/logout", auth, async function (req, res) {
+router.post("/users/logout", auth, async function (req, res) {
   const reqObj = { requestInfo: ReqInfo.LOGOUT_USER };
   try {
     //parameter token is an object element of tokens array
@@ -107,7 +108,7 @@ router.post("/logout", auth, async function (req, res) {
 });
 
 //Logout of all sessions (logged out of all devices)
-router.post("/logoutAll", auth, async function (req, res) {
+router.post("/users/logoutAll", auth, async function (req, res) {
   try {
     const reqObj = { requestInfo: ReqInfo.LOGOUT_USER };
     req.user.tokens = []; //remove all tokens
@@ -129,7 +130,7 @@ router.post("/logoutAll", auth, async function (req, res) {
 
 //Fire route handler function when client make GET Request
 //on route "/users" (Get all user documents)
-router.get("/me", auth, async (req, res) => {
+router.get("/users/me", auth, async (req, res) => {
   res
     .setHeader("Content-Type", "application/json")
     .status(200)
@@ -137,7 +138,7 @@ router.get("/me", auth, async (req, res) => {
 });
 
 //You should be able to update user profile if you are authenticated
-router.patch("/me", auth, async function (req, res) {
+router.patch("/users/me", auth, async function (req, res) {
   const passwordExist = req.body.password ? true : false;
   if (passwordExist) {
     //If user want to update password
@@ -169,7 +170,7 @@ router.patch("/me", auth, async function (req, res) {
   }
 });
 
-router.delete("/me", auth, async function (req, res) {
+router.delete("/users/me", auth, async function (req, res) {
   const reqObj = {
     _id: req.user._id,
     requestInfo: ReqInfo.DELETE_USER,
@@ -222,7 +223,7 @@ const upload = multer({
 //file will be stored in req.file. filename is used to determine
 //what the file should be named inside the folder
 router.post(
-  "/me/avatar",
+  "/users/me/avatar",
   //Make sure users are authenticated before accepting their
   //upload image.
   auth,
@@ -252,7 +253,7 @@ router.post(
   }
 );
 
-router.delete("/me/avatar", auth, async (req, res) => {
+router.delete("/users/me/avatar", auth, async (req, res) => {
   req.user.avatar = undefined;
   const requestObject = {
     requestInfo: ReqInfo.DELETE_UPLOAD_PROFILE,
@@ -266,7 +267,7 @@ router.delete("/me/avatar", auth, async (req, res) => {
   }
 });
 
-router.get("/:id/avatar", async function (req, res) {
+router.get("/users/:id/avatar", async function (req, res) {
   const requestObject = {
     requestInfo: ReqInfo.USER_PROFILE,
     _id: req.params.id,

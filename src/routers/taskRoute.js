@@ -1,5 +1,5 @@
 const express = require("express");
-const dbFunction = require("../db/mongoose");
+const { dbFunction } = require("../db/mongoose");
 const auth = require("../middlewares/auth");
 
 //Create Router for task
